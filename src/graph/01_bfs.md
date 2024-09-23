@@ -7,7 +7,7 @@ tags:
 
 It is well-known, that you can find the shortest paths between a single source and all other vertices in $O(|E|)$ using [Breadth First Search](breadth-first-search.md) in an **unweighted graph**, i.e. the distance is the minimal number of edges that you need to traverse from the source to another vertex.
 We can interpret such a graph also as a weighted graph, where every edge has the weight $1$.
-If not all edges in graph have the same weight, that we need a more general algorithm, like [Dijkstra](dijkstra.md) which runs in $O(|V|^2 + |E|)$ or $O(|E| \log |V|)$ time.
+If not all edges in graph have the same weight, then we need a more general algorithm, like [Dijkstra](dijkstra.md) which runs in $O(|V|^2 + |E|)$ or $O(|E| \log |V|)$ time.
 
 However if the weights are more constrained, we can often do better.
 In this article we demonstrate how we can use BFS to solve the SSSP (single-source shortest path) problem in $O(|E|)$, if the weight of each edge is either $0$ or $1$.
@@ -17,27 +17,41 @@ In this article we demonstrate how we can use BFS to solve the SSSP (single-sour
 We can develop the algorithm by closely studying Dijkstra's algorithm and thinking about the consequences that our special graph implies.
 The general form of Dijkstra's algorithm is (here a `set` is used for the priority queue):
 
-```cpp
-d.assign(n, INF);
-d[s] = 0;
-set<pair<int, int>> q;
-q.insert({0, s});
-while (!q.empty()) {
-    int v = q.begin()->second;
-    q.erase(q.begin());
+=== "C++"
+    ```cpp
+    d.assign(n, INF);
+    d[s] = 0;
+    set<pair<int, int>> q;
+    q.insert({0, s});
+    while (!q.empty()) {
+        int v = q.begin()->second;
+        q.erase(q.begin());
 
-    for (auto edge : adj[v]) {
-        int u = edge.first;
-        int w = edge.second;
+        for (auto edge : adj[v]) {
+            int u = edge.first;
+            int w = edge.second;
 
-        if (d[v] + w < d[u]) {
-            q.erase({d[u], u});
-            d[u] = d[v] + w;
-            q.insert({d[u], u});
+            if (d[v] + w < d[u]) {
+                q.erase({d[u], u});
+                d[u] = d[v] + w;
+                q.insert({d[u], u});
+            }
         }
     }
-}
-```
+    ```
+=== "Python"
+    ```py
+    d = [float("inf")] * n
+    d[s] = 0
+    q = {(0, s)}
+    while q:
+        _, v = q.pop()
+        for u, w in adj[v]:
+            if d[v] + w < d[u]:
+                q.discard((d[u], u))
+                d[u] = d[v] + w
+                q.add((d[u], u))
+    ```
 
 We can notice that the difference between the distances between the source `s` and two other vertices in the queue differs by at most one.
 Especially, we know that $d[v] \le d[u] \le d[v] + 1$ for each $u \in Q$.
@@ -53,27 +67,43 @@ This structure is so simple, that we don't need an actual priority queue, i.e. u
 We can simply use a normal queue, and append new vertices at the beginning if the corresponding edge has weight $0$, i.e. if $d[u] = d[v]$, or at the end if the edge has weight $1$, i.e. if $d[u] = d[v] + 1$.
 This way the queue still remains sorted at all time.
 
-```cpp
-vector<int> d(n, INF);
-d[s] = 0;
-deque<int> q;
-q.push_front(s);
-while (!q.empty()) {
-    int v = q.front();
-    q.pop_front();
-    for (auto edge : adj[v]) {
-        int u = edge.first;
-        int w = edge.second;
-        if (d[v] + w < d[u]) {
-            d[u] = d[v] + w;
-            if (w == 1)
-                q.push_back(u);
-            else
-                q.push_front(u);
+=== "C++"
+    ```cpp
+    vector<int> d(n, INF);
+    d[s] = 0;
+    deque<int> q;
+    q.push_front(s);
+    while (!q.empty()) {
+        int v = q.front();
+        q.pop_front();
+        for (auto edge : adj[v]) {
+            int u = edge.first;
+            int w = edge.second;
+            if (d[v] + w < d[u]) {
+                d[u] = d[v] + w;
+                if (w == 1)
+                    q.push_back(u);
+                else
+                    q.push_front(u);
+            }
         }
     }
-}
-```
+    ```
+=== "Python"
+    ```py
+    d = [float("inf")] * n
+    d[s] = 0
+    q = deque([s])
+    while q:
+        v = q.popleft()
+        for u, w in adj[v]:
+            if d[v] + w < d[u]:
+                d[u] = d[v] + w
+                if w == 1:
+                    q.append(u)
+                else:
+                    q.appendleft(u)
+    ```
 
 ## Dial's algorithm
 
